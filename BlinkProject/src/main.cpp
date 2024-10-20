@@ -10,10 +10,10 @@
 #define LIGHT_SENSOR_PIN_HAT 35  // 帽子检测光传感器引脚
 #define SD_CARD_CS 5              // SD卡的CS引脚
 #define SPEAKER_PIN 25            // 扬声器引脚
-#define LED_PIN 15                // LED灯带数据引脚
+#define LED_PIN 14                // LED灯带数据引脚 (已连接到D6)
 #define NUM_LEDS 30               // LED灯带上LED的数量
-#define DFPLAYER_TX 26            // DFPlayer TX引脚
-#define DFPLAYER_RX 27            // DFPlayer RX引脚
+#define DFPLAYER_TX 3             // DFPlayer TX引脚 (已连接到D3)
+#define DFPLAYER_RX 2             // DFPlayer RX引脚 (已连接到D2)
 
 Adafruit_MPU6050 mpu;                        // MPU6050传感器对象
 BluetoothSerial SerialBT;                    // 蓝牙串口对象
@@ -80,28 +80,26 @@ void turnOnAllWhite() {
     strip.show();
 }
 
-// Turn off all LED lights
+// 关闭所有LED灯
 void turnOffBrimLight() {
     for (int i = 0; i < strip.numPixels(); i++) {
         strip.setPixelColor(i, strip.Color(0, 0, 0));  // 关闭所有灯光
     }
     strip.show();
 }
-
-// Check if the user is jumping
 bool isJumping(float ax, float ay, float az) {
     float totalAcceleration = sqrt(ax * ax + ay * ay + az * az);
     return totalAcceleration > 15;  // 检测加速度是否大于15，判断是否跳跃
 }
 
-// Calculate distance based on acceleration
+// 根据加速度计算距离
 int calculateDistance(float ax, float ay, float az) {
     float acceleration = sqrt(ax * ax + ay * ay + az * az);
     int distance = acceleration * 0.05;  // 计算距离
     return distance;
 }
 
-// Update the number of lit LEDs
+// 更新已点亮的LED数量
 void updateLeds() {
     if (litLeds < strip.numPixels()) {
         litLeds++;  // 每次增加点亮的LED数量
@@ -177,9 +175,9 @@ void loop() {
         }
     }
 
-    // Accumulate distance and light up new LEDs
+    // 累积距离并点亮新的LED
     distanceTravelled += calculateDistance(ax, ay, az);
-    if (distanceTravelled > 100) { // Light up a new LED every 100 meters
+    if (distanceTravelled > 100) { // 每100米点亮一个新的LED
         updateLeds();
 
         // 当完成跑步任务后
@@ -192,20 +190,16 @@ void loop() {
 
         distanceTravelled = 0;
     }
-
-    // Check for Bluetooth signals
     if (SerialBT.available()) {
         String otherHatSignal = SerialBT.readString();
         if (otherHatSignal == "close") {
-            updateLeds();  // Light up a new LED during Bluetooth interaction
+            updateLeds();  // 在蓝牙互动期间点亮新的LED
             playTaskCompletePrompt();  // 提示任务完成
-            delay(3000);  // 等待提示音播放完成
-
-            // 切换到下一个任务
+            delay(3000);
             currentAction = (currentAction == "jump") ? "run" : "jump";
             playActionPrompt(currentAction);  // 提示下一步的动作
         }
     }
 
-    delay(100);  // 每次循环的延迟时间
+    delay(100);
 }
